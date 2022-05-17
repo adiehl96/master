@@ -3,6 +3,7 @@ channels:
   - defaults
 dependencies:
   - python=3.9
+  - conda-forge::pygraphviz
   - pip
   - pip:
     - black
@@ -11,3 +12,4 @@ dependencies:
     - scikit-learn
     - scipy
     - tqdm
+    - networkx
