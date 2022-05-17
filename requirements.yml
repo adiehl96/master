@@ -1,0 +1,13 @@
+name: master
+channels:
+  - defaults
+dependencies:
+  - python=3.9
+  - pip
+  - pip:
+    - black
+    - matplotlib
+    - numpy
+    - scikit-learn
+    - scipy
+    - tqdm
