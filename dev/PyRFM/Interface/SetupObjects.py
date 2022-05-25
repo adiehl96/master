@@ -26,16 +26,22 @@ def setup_objects(params=None):
         dims = 2 * u_dim
 
     uu_kernel_params = params.get(
-        "uu_kernel_params", [np.log(1) * np.ones((dims)), np.log(2)]
+        "uu_kernel_params", np.array([np.log(1)] * dims + [np.log(2)])
     )
+    # print("uu_kernel_params")
+    # print(uu_kernel_params)
     uu_prior = params.get("uu_prior", KernelPriors.InverseGammas)
 
     if uu_prior == KernelPriors.LogNormals:
-        param_defaults = [uu_kernel_params, 0.5 * np.ones((len(uu_kernel_params), 1))]
-        uu_noise_params = [np.log(0.1), 0.5]
+        param_defaults = np.empty((dims + 1, 2))
+        param_defaults[:, 0] = uu_kernel_params
+        param_defaults[:, 1] = 0.5
+        # print("param_defaults")
+        # print(param_defaults)
+        uu_noise_params = np.array([np.log(0.1), 0.5])
     elif uu_prior == KernelPriors.InverseGammas:
         param_defaults = 0.1 * np.ones((len(uu_kernel_params), 2))
-        uu_noise_params = 0.1 * np.ones((1, 2))
+        uu_noise_params = 0.1 * np.ones((2))
     else:
         raise Exception("uu_prior not defined")
 

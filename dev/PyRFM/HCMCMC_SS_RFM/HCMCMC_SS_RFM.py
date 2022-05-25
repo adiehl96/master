@@ -107,19 +107,17 @@ class HCMCMC_SS_RFM:
 
         # Initialise MCMC traces if starting a new run
 
-        if newrun:
-            self.rfm_state = np.empty((self.burn + self.iterations, 1))
-            self.predictions = np.empty((self.burn + self.iterations, 1))
-            self.performance = np.empty((self.burn + self.iterations, 1))
+        # self.rfm_state = np.empty((self.burn + self.iterations, 1))
+        # print("len(self.rfm.data_uu.test_x_v)")
+        # print(len(self.rfm.data_uu.test_x_v))
+        self.predictions = np.empty(
+            (self.burn + self.iterations, len(self.rfm.data_uu.test_x_v))
+        )
+        self.performance = []
 
-            start_index = 1
-            end_index = self.burn + self.iterations
-        else:
-            # We are extending a previous experiment
-            start_index = len(self.rfm_state) + 1
-            end_index = self.burn + self.iterations
+        end_index = self.burn + self.iterations
 
-        for i in range(newrun, end_index):
+        for i in range(end_index):
             self.rfm.new_permutation()
             self.rfm.permute()
 
@@ -127,9 +125,9 @@ class HCMCMC_SS_RFM:
 
             self.rfm.inverse_permute()
 
-            self.rfm_state[i] = self.rfm.state
-            self.predictions[i] = self.rfm.prediction
-            self.performance[i] = self.rfm.performance(False, [])
+            # self.rfm_state[i] = self.rfm.state()
+            self.predictions[i] = self.rfm.prediction()
+            self.performance.append(self.rfm.performance(False, np.array([])))
 
             if i % self.plot_modulus == 0 and self.plot_modulus < self.iterations:
                 self.rfm.plot()
@@ -150,7 +148,7 @@ class HCMCMC_SS_RFM:
 
     def sample_step(self, i):
         if i % self.t_modulus == 0:
-            self.rfm.ess_t(np.round(self.t_iterations / 2))
+            self.rfm.ess_t(int(np.round(self.t_iterations / 2)))
         if i % self.lv_modulus == 0:
             self.rfm.ss_u(self.u_width, self.u_step_out, self.u_max_attempts)
         if i % self.pp_modulus == 0:
@@ -170,4 +168,4 @@ class HCMCMC_SS_RFM:
         # if i % self.data_par_modulus == 0: # todo I deleted this, might have been prematurely?
         #     self.rfm.gs_dataparams
         if i % self.t_modulus == 0:
-            self.rfm.ess_t(np.round(self.t_iterations / 2))
+            self.rfm.ess_t(int(np.round(self.t_iterations / 2)))

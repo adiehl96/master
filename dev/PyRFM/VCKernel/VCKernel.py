@@ -18,16 +18,30 @@ class VCKernel:
         self.noise_params = [np.log(0.1), 0.5]  # Parameters for prior on noise
 
     def prior(self):  # Prior for parameters
+        # print("self.noise_params")
+        # print(self.noise_params)
         if self.prior_type == KernelPriors.LogNormals:
             llh = 0
-            for i in range(len(self.params)):
+            # print("llh inside")
+            # print(llh)
+            for idx, param in enumerate(self.params):
                 llh = llh - 0.5 * np.square(
-                    self.params[i] - self.prior_params[i, 0]
-                ) / np.square(self.prior_params[i, 1])
+                    param - self.prior_params[idx, 0]
+                ) / np.square(self.prior_params[idx, 1])
+            # print("llh inside")
+            # print(llh)
+            llh = llh - 0.5 * np.square(
+                self.diag_noise - self.noise_params[0]
+            ) / np.square(self.noise_params[1])
+            # print("llh inside")
+            # print(llh)
+            return llh
 
     def matrix(self, x, z=None):  # Calculate kernel matrix
-        print("self.params[0]", self.params[0])
-        print("self.params[1]", self.params[1])
+        # print("self.params")
+        # print(self.params)
+        # print("self.params[0]", self.params[0])
+        # print("self.params[1]", self.params[1])
         if z is None:
             matrix = lloyd_kernel_matrix(x, x, self.params[0], self.params[1])
             matrix = matrix + (
@@ -49,7 +63,13 @@ def rbf_kernel_matrix(xi1, xi2, lengthscale, signal_variance):
     )
 
 
-def lloyd_kernel_matrix(xi1, xi2, lengthscale, signal_variance):
+def lloyd_kernel_matrix(xi1, xi2, log_lengthscale, log_signal_variance):
+    """
+    This kernel function tries to replicate
+    source: covSEiso_sym.m
+    """
+    lengthscale = np.exp(log_lengthscale)
+    signal_variance = np.exp(log_signal_variance)
     flipped_xi2 = np.flip(xi2, axis=-1)
     return 0.5 * (
         rbf_kernel_matrix(xi1, xi2, lengthscale, signal_variance)

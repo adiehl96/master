@@ -18,13 +18,13 @@ def calc_auc(p, o, a, probs=None, links=None):
 
     N0 = np.sum(1 - links)
     N1 = np.sum(links)
-    FNR = [np.zeros((len(links), 1)), 1]
-    TNR = [np.zeros((len(links), 1)), 1]
+    FNR = np.array([0] * len(links) + [1])
+    TNR = np.array([0] * len(links) + [1])
 
     for k in range(1, len(links)):
         ii = np.where(probs < probs[k])
-        FNR[k] = np.sum(links(ii)) / N1
-        TNR[k] = np.sum(1 - links(ii)) / N0
+        FNR[k] = np.sum(links[ii]) / N1
+        TNR[k] = np.sum(1 - links[ii]) / N0
 
     TPR = 1 - FNR
     FPR = 1 - TNR
