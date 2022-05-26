@@ -107,9 +107,6 @@ class HCMCMC_SS_RFM:
 
         # Initialise MCMC traces if starting a new run
 
-        # self.rfm_state = np.empty((self.burn + self.iterations, 1))
-        # print("len(self.rfm.data_uu.test_x_v)")
-        # print(len(self.rfm.data_uu.test_x_v))
         self.predictions = np.empty(
             (self.burn + self.iterations, len(self.rfm.data_uu.test_x_v))
         )
@@ -137,8 +134,8 @@ class HCMCMC_SS_RFM:
                 self.rfm.talk()
                 print("")
 
-        self.predictions_average = self.predictions[self.burn + 1]
-        for i in range(self.burn + 2, self.iterations):
+        self.predictions_average = self.predictions[self.burn]
+        for i in range(self.burn + 1, self.iterations):
             self.predictions_average = self.rfm.sumpredictions(
                 self.predictions_average, self.predictions[i]
             )

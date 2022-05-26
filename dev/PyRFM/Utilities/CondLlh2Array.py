@@ -8,6 +8,6 @@ def cond_llh_2array(W, X, ObsModel, params):
         p = expit(W)
         return bernoulli_llh(p, X)
     if ObsModel == ObservationModels.Gaussian:
-        raise Exception("Only Gaussian Observation Model Implemented")
+        raise Exception("Only Logit Observation Model Implemented")
     if ObsModel == ObservationModels.Poisson:
-        raise Exception("Only Gaussian Observation Model Implemented")
+        raise Exception("Only Logit Observation Model Implemented")

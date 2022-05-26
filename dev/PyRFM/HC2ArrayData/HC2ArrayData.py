@@ -24,8 +24,7 @@ class HC2ArrayData:
     def flatten_adjacency_matrix(self):
         O = np.ones_like(self.file)
         O = np.triu(O, 1)
-        self.train_x_i = np.array(np.where(O > 0))[0, :]
-        self.train_x_j = np.array(np.where(O > 0))[1, :]
+        self.train_x_i, self.train_x_j = np.asarray(O > 0).nonzero()
         self.train_x_v = self.file[O == 1]
 
     def partition(self, folds, fold, rng):

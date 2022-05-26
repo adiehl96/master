@@ -97,25 +97,13 @@ class HCRFM:
             self.observation_model_uu,
             params,
         )
-        # print("llh")
-        # print(llh)
-        # raise Exception("")
         llh = llh + self.prior_pp_uu()
-        # print("self.self.prior_pp_uu().shape")
-        # print(self.prior_pp_uu().shape)
-        # print(self.prior_pp_uu())
-        # print(llh)
 
         if self.data_uu.train_x_v.size != 0:
             llh = llh + self.array_kern_uu.prior()
-            # print("llh if clause")
-            # print(llh)
-            # raise Exception("jjj")
         return llh
 
     def cond_llh_array_params_uu(self, new_params):
-        # print("new_params")
-        # print(new_params)
         self.array_kern_uu.params = new_params[:-1]
         self.array_kern_uu.diag_noise = new_params[-1]
         self.update_kernel_matrices_uu()
@@ -139,24 +127,27 @@ class HCRFM:
 
     def cond_llh_u(self, u_index):
         llh = 0
-        for i in range(len(self.data_uu.train_x_v)):
-            active = (
-                self.data_uu.train_x_i[i] == u_index
-                or self.data_uu.train_x_j[i] == u_index
-            )
-            self.update_kernel_matrices_ip_uu[i][active] * (
-                self.k_pp_pp_uu[i] / self.t_uu[i]
-            )
-            params = {"precision": self.data_precision_uu}
-            llh = llh + cond_llh_2array(
-                self.w_uu[i][active],
-                self.data_uu.train_x_v[i][active],
-                self.observation_model_uu,
-                params,
-            )
+        active = (self.data_uu.train_x_i == u_index).astype(np.int8) + (
+            self.data_uu.train_x_j == u_index
+        ).astype(np.int8)
+        (active,) = active.nonzero()
+        self.update_kernel_matrices_ip_uu(active)
+        self.w_uu[active] = (
+            self.k_ip_pp_uu[active]
+            @ np.linalg.lstsq(self.k_pp_pp_uu, self.t_uu, rcond=-1)[0]
+        )
+        params = {"precision": self.data_precision_uu}
+        llh = llh + cond_llh_2array(
+            self.w_uu[active],
+            self.data_uu.train_x_v[active],
+            self.observation_model_uu,
+            params,
+        )
 
-        if self.data_uu.train_x_v.size == 0:
-            llh = llh + self.prior_u
+        if self.data_uu.train_x_v.size != 0:
+            llh = llh + self.prior_u()
+
+        return llh
 
     # MCMC routines
     def init_u_rand(self):
@@ -196,13 +187,7 @@ class HCRFM:
         )
         self.w_uu = np.zeros((len(self.data_uu.train_x_i)))
         self.prediction_uu = np.zeros((len(self.data_uu.test_x_i)))
-        # print(self.array_kern_uu.name)
-        # print("before matrix operation")
-        # print("self.ip_uu.shape", self.ip_uu.shape)
-        # print("self.pp_uu.shape", self.pp_uu.shape)
         self.k_ip_pp_uu = self.array_kern_uu.matrix(self.ip_uu, self.pp_uu)
-        # print("after matrix operation")
-        # print("self.k_ip_pp_uu", self.k_ip_pp_uu)
         self.k_pp_pp_uu = self.array_kern_uu.matrix(self.pp_uu)
         self.chol_k_pp_pp_uu = cholesky(self.k_pp_pp_uu)
         self.k_pred_pp_uu = self.array_kern_uu.matrix(self.pred_ip_uu, self.pp_uu)
@@ -223,12 +208,6 @@ class HCRFM:
         )[0].T
         for _ in range(iterations):
             params = {"precision": self.data_precision_uu}
-            # print("self.data_uu.train_x_v")
-            # print(self.data_uu.train_x_v.shape)
-            # print("self.t_uu.shape")
-            # print(self.t_uu.shape)
-            # print("(k_pp_pp_invk_ppip_t * self.t_uu).shape")
-            # print((k_pp_pp_invk_ppip_t @ self.t_uu).shape)
             llh_fn = lambda T: cond_llh_2array(
                 k_pp_pp_invk_ppip_t @ T,
                 self.data_uu.train_x_v,
@@ -251,31 +230,93 @@ class HCRFM:
             self.rng,
             step_out,
         ).flatten()
-        # print("x after slice sampling")
-        # print(x.flatten())
         self.array_kern_uu.params = x[:-1]
         self.array_kern_uu.diag_noise = x[-1]
         self.update_kernel_matrices_uu()
 
-    def surf_slice_pp_UU(self, array_index, slice_width, step_out, max_attempts):
-        pass
+    def surf_slice_pp_uu(self, array_index, slice_width, step_out, max_attempts):
+        raise Exception("surf_slice_pp_UU not yet implemented")
 
-    def slice_pp_UU(self, array_index, slice_width, step_out, max_attempts):
-        pass
+    def slice_pp_uu(self, array_index, slice_width, step_out, max_attempts):
+        raise Exception("slice_pp_UU not yet implemented")
 
-    def slice_u(self, array_index, slice_width, step_out, max_attempts):
-        pass
+    def slice_u(self, slice_width, step_out, max_attempts):
+        (m, d) = self.u.shape
+        perm = np.arange(m)
+        self.rng.shuffle(perm)
+        for mm in perm:
+            print("mm")
+            print(mm)
+            log_pstar = self.cond_llh_u(mm)
+            log_pstar = log_pstar + np.log(self.rng.uniform())
+            print("log_pstar")
+            print(log_pstar)
+
+            direction = self.rng.uniform(size=(d))
+            direction = direction / np.sqrt(np.sum(np.square(direction)))
+
+            rr = self.rng.uniform()
+            u_l = self.u[mm] - rr * slice_width * direction
+            u_r = self.u[mm] + (1 - rr) * slice_width * direction
+            u_saved = self.u.copy()
+
+            attempts = 0
+
+            if step_out:
+                while attempts < max_attempts:
+                    self.u[mm] = u_l
+                    test_p = self.cond_llh_u(mm)
+                    if test_p > log_pstar:
+                        u_l = self.u[mm] - slice_width * direction
+                    else:
+                        break
+                    attempts += 1
+                self.u[mm] = u_saved[mm]
+                while attempts < max_attempts:
+                    self.u[mm] = u_r
+                    test_p = self.cond_llh_u(mm)
+                    if test_p > log_pstar:
+                        u_r = self.u[mm] + slice_width * direction
+                    else:
+                        break
+                    attempts += 1
+
+            self.u[mm] = u_saved[mm]
+            attempts = 0
+
+            while attempts < max_attempts:
+                self.u[mm] = self.rng.uniform() * (u_r - u_l) + u_l
+                log_p_prime = self.cond_llh_u(mm)
+                if log_p_prime >= log_pstar:
+                    break
+                else:
+                    if (self.u[mm] - u_saved[mm]) * direction > 0:
+                        u_r = self.u[mm]
+                    elif (self.u[mm] - u_saved[mm]) * direction < 0:
+                        u_l = self.u[mm]
+                    else:
+                        raise Exception(
+                            "BUG DETECTED: Shrunk to current position and still not acceptable."
+                        )
+                attempts += 1
+            if attempts >= max_attempts:
+                self.u[mm] = u_saved[mm]
+                ip_indices = (self.data_uu.train_x_i == mm).astype(np.int8) + (
+                    self.data_uu.train_x_j == mm
+                ).astype(np.int8)
+                (ip_indices,) = ip_indices.nonzero()
+                self.update_kernel_matrices_ip_uu(ip_indices)
 
     def ss_pp(self, iterations, width, step_out, max_attempts, surf=True):
         for _ in range(iterations):
             for i in range(len(self.pp_uu)):
                 if surf:
-                    self.surf_slice_pp_UU(i, width, step_out, max_attempts)
+                    self.surf_slice_pp_uu(i, width, step_out, max_attempts)
                 else:
-                    self.slice_pp_UU(i, width, step_out, max_attempts)
+                    self.slice_pp_uu(i, width, step_out, max_attempts)
 
     def ss_u(self, width, step_out, max_attempts):
-        self.slice_u(1, width, step_out, max_attempts)
+        self.slice_u(width, step_out, max_attempts)
 
     def state(self):  # Returns a struct with the current variable values
         state = {}
@@ -348,28 +389,14 @@ class HCRFM:
     def llh(self):  # Full log likelihood; calculated using cache
         llh = 0
         llh = llh + self.array_kern_uu.prior()
-        # print("llh first")
-        # print(llh.shape)
         llh = llh + self.prior_u()
-        # print("llh second")
-        # print(llh.shape)
 
         llh = llh + self.prior_pp_uu()
-        # print("llh")
-        # print(llh.shape)
-        # print("np.sum(np.log(np.diag(self.chol_k_pp_pp_uu))).shape")
-        # print(np.sum(np.log(np.diag(self.chol_k_pp_pp_uu))).shape)
-        # print("cho_solve((self.chol_k_pp_pp_uu, False), self.t_uu)")
-        # print(cho_solve((self.chol_k_pp_pp_uu, False), self.t_uu).shape)
-        # print()
         llh = (
             llh
             - np.sum(np.log(np.diag(self.chol_k_pp_pp_uu)))
             - 0.5 * (self.t_uu @ cho_solve((self.chol_k_pp_pp_uu, False), self.t_uu))
         )
-        # print("llh")
-        # print(llh)
-        # raise Exception("lel")
         self.update_w_uu()
         llh = llh + cond_llh_2array(
             self.w_uu,
@@ -383,16 +410,15 @@ class HCRFM:
         self.k_pp_pp_uu = self.array_kern_uu.matrix(self.pp_uu)
         self.chol_k_pp_pp_uu = cholesky(self.k_pp_pp_uu)
 
-    def update_kernel_matrices_ip_uu(self, ip_indices, array_index):
-        i = array_index
+    def update_kernel_matrices_ip_uu(self, ip_indices):
 
-        self.ip_uu[i][ip_indices] = create_gp_input_points(
-            self.data_uu.train_x_i[i][ip_indices],
-            self.data_uu.train_x_j[i][ip_indices],
+        self.ip_uu[ip_indices] = create_gp_input_points(
+            self.data_uu.train_x_i[ip_indices],
+            self.data_uu.train_x_j[ip_indices],
             self.u,
         )
-        self.k_ip_pp_uu[i][ip_indices] = self.array_kern_uu.matrix(
-            self.ip_uu[i][ip_indices], self.pp_uu[i]
+        self.k_ip_pp_uu[ip_indices] = self.array_kern_uu.matrix(
+            self.ip_uu[ip_indices], self.pp_uu
         )
 
     def update_kernel_matrices_pp_uu(self, pp_index, array_index):
@@ -411,7 +437,9 @@ class HCRFM:
         )
 
     def update_w_uu(self):
-        self.w_uu = self.k_ip_pp_uu @ np.linalg.lstsq(self.k_pp_pp_uu, self.t_uu)[0]
+        self.w_uu = (
+            self.k_ip_pp_uu @ np.linalg.lstsq(self.k_pp_pp_uu, self.t_uu, rcond=-1)[0]
+        )
 
     def new_permutation(self):
         perm = np.arange(len(self.data_uu.train_x_v))
@@ -467,22 +495,23 @@ class HCRFM:
 
             # todo do the rest
 
-    def talk(self, performance=None):  # Tell the world about various performance stats
+    def talk(
+        self, performance=None
+    ):  # Tell the world about various performance stats, but why is the model talking to us?
         if performance is None:
             performance = self.performance(False, np.array([]))
 
-        for i in range(len(performance.uu)):
-            print("")
-            print(f"UU {i:02} : ", end="")
-            if self.observation_model_uu == ObservationModels.Logit:
-                print(
-                    f"AUC = {performance.uu[i].AUC:.2f} : Error = {performance.uu[i].ClassifierError:.2f}"
-                )
-            if (
-                self.observation_model_uu == ObservationModels.Gaussian
-                or self.observation_model_uu == ObservationModels.Poisson
-            ):
-                raise Exception("Only ObservationModels Logit Implemented")
+        print("")
+        print(f"UU : ", end="")
+        if self.observation_model_uu == ObservationModels.Logit:
+            print(
+                f"AUC = {performance['auc']:.3f} : Error = {performance['classifier_error']:.3f}"
+            )
+        if (
+            self.observation_model_uu == ObservationModels.Gaussian
+            or self.observation_model_uu == ObservationModels.Poisson
+        ):
+            raise Exception("Only ObservationModels Logit Implemented")
 
     def sum_predictions(self, p1, p2):
         p_sum = np.empty((len(p1.uu)))

@@ -1,24 +1,16 @@
 import numpy as np
 
 
-def slice_sample_max(
-    N, burn, logdist, xx, widths, max_attempts, rng, step_out=False, varargin=None
-):
+def slice_sample_max(N, burn, logdist, xx, widths, max_attempts, rng, step_out=False):
     dimension = len(xx)
     samples = np.zeros((dimension, N))
     log_px = logdist(xx)
-
-    # print("log_px")
-    # print(log_px)
-    # raise Exception("lel")
 
     for ii in range(N + burn):
         log_uprime = np.log(rng.uniform()) + log_px
 
         perm = np.arange(dimension)
         rng.shuffle(perm)
-        # print(perm)
-        # raise Exception("lel")
         for dd in perm:
             x_l = xx
             x_r = xx
