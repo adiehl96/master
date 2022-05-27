@@ -1,15 +1,8 @@
 import numpy as np
 
 
-def calc_auc(p, o, a, probs=None, links=None):
-    if probs is None or links is None:
-        probs = np.array([])
-        links = np.array([])
-        for dd in range(a):
-            probs += p[dd][o[dd]]
-            links += a[dd][o[dd]]
-
-    if probs.size == 0:
+def calc_auc(probs=None, links=None):
+    if probs is None or probs.size == 0:
         raise Exception("This shouldn't happen")
         return -1, -1, -1
 
@@ -17,7 +10,7 @@ def calc_auc(p, o, a, probs=None, links=None):
     probs = probs[order]
     links = links[order]
 
-    n0 = np.sum(1 - links)
+    n0 = np.sum(1.0 - links)
     n1 = np.sum(links)
     fnr = np.array([0.0] * len(links) + [1.0])
     tnr = np.array([0.0] * len(links) + [1.0])

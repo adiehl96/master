@@ -1,7 +1,5 @@
 import numpy as np
-from Enumerations.KernelPriors import KernelPriors
-from Enumerations.ObservationModels import ObservationModels
-from Enumerations.InitialisationMethods import InitialisationMethods
+from Enumerations import KernelPriors, ObservationModels, InitialisationMethods
 from HCRFM.HCRFM import HCRFM
 from HCMCMC_SS_RFM.HCMCMC_SS_RFM import HCMCMC_SS_RFM
 from HC2ArrayData.HC2ArrayData import HC2ArrayData
@@ -91,7 +89,6 @@ def setup_objects(params=None):
 
     # Setup UU kernel
 
-    rfm.array_kern_uu.name = uu_kernel_name
     rfm.array_kern_uu.diag_noise = uu_diag_noise
     rfm.array_kern_uu.params = uu_kernel_params
     rfm.array_kern_uu.prior_params = uu_kern_prior_params

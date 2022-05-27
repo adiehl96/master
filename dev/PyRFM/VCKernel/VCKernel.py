@@ -1,5 +1,5 @@
 import numpy as np
-from Enumerations.KernelPriors import KernelPriors
+from Enumerations import KernelPriors
 
 
 class VCKernel:

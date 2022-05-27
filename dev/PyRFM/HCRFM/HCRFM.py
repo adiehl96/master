@@ -1,5 +1,5 @@
 import numpy as np
-from Enumerations.ObservationModels import ObservationModels
+from Enumerations import ObservationModels
 from VCKernel.VCKernel import VCKernel
 from Utilities.CondLlh2Array import cond_llh_2array
 from Utilities.CreateGPInputPoints import create_gp_input_points

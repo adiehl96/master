@@ -6,7 +6,7 @@ from Utilities.CalcRMSE import calc_rmse
 
 
 def calc_bin_error_stats(probs, links):
-    auc, _, _ = calc_auc([], [], [], probs, links)
+    auc, _, _ = calc_auc(probs, links)
     kls = calc_kl_score(probs, links)
     cls = calc_class_score(probs, links)
     classifier_error = calc_classifier_score(probs, links)

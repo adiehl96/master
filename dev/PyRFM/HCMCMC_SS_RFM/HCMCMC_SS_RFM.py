@@ -1,5 +1,5 @@
 import numpy as np
-from Enumerations.InitialisationMethods import InitialisationMethods
+from Enumerations import InitialisationMethods
 
 
 class HCMCMC_SS_RFM:

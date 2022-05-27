@@ -1,5 +1,4 @@
-from Enumerations.ObservationModels import ObservationModels
-from Enumerations.KernelPriors import KernelPriors
+from Enumerations import ObservationModels, KernelPriors
 from Interface.RFMExperiment import rfm_experiment
 
 

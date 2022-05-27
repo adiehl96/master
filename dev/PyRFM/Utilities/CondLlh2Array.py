@@ -1,4 +1,4 @@
-from Enumerations.ObservationModels import ObservationModels
+from Enumerations import ObservationModels
 from scipy.special import expit
 from Utilities.BernoulliLlh import bernoulli_llh
 
