@@ -71,6 +71,7 @@ class HCMCMC_SS_RFM:
             and self.init_method != InitialisationMethods.PCA
         ):
             for repeat in range(5):
+
                 for i in range(50):
                     self.rfm.new_permutation()
                     self.rfm.permute()

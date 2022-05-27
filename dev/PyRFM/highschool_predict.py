@@ -2,7 +2,6 @@ from Enumerations.ObservationModels import ObservationModels
 from Enumerations.KernelPriors import KernelPriors
 from Interface.RFMExperiment import rfm_experiment
 
-# generic startup (Not necessary in python)
 
 params = {}
 
@@ -11,8 +10,8 @@ params["uu_filename"] = "HighSchool.csv"
 params["u_dim"] = 1  # Number of latent dimensions
 params["uu_folds"] = 5  # ; % Number of folds for cross validation
 params["uu_fold"] = 1  # ; % Fold to use
-params["burn"] = 3  # ;
-params["iterations"] = 1  # ;
+params["burn"] = 5  # ;
+params["iterations"] = 5  # ;
 params["plot_modulus"] = 1000000  # ; % How often to plot - i.e. never
 params["uu_observation_model"] = ObservationModels.Logit  # ;
 params["n_pp_uu"] = 50  # ; % Number of inducing points
