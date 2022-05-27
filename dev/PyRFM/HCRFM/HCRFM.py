@@ -2,7 +2,6 @@ import numpy as np
 from Enumerations.ObservationModels import ObservationModels
 from VCKernel.VCKernel import VCKernel
 from Utilities.CondLlh2Array import cond_llh_2array
-from Utilities.MatlabCompat import m_t
 from Utilities.CreateGPInputPoints import create_gp_input_points
 from scipy.linalg import cholesky, cho_solve
 from SliceSampling.SliceSampleMax import slice_sample_max
@@ -12,7 +11,6 @@ from Utilities.CalcBinErrorStats import calc_bin_error_stats
 from copy import deepcopy
 from mpl_toolkits.mplot3d import Axes3D
 import matplotlib.pyplot as plt
-from Utilities.functional import flatten
 
 
 class HCRFM:
@@ -541,8 +539,7 @@ class HCRFM:
         perm = np.arange(len(self.data_uu.train_x_v))
         self.rng.shuffle(perm)
         self.perm_uu = perm
-        self.iperm_uu = np.zeros_like(perm)
-        self.iperm_uu = np.array(list(range(len(self.perm_uu))))[self.perm_uu]
+        self.iperm_uu = np.argsort(perm)
 
     def permute(self):
         self.data_uu.train_x_i = self.data_uu.train_x_i[self.perm_uu]
@@ -559,6 +556,7 @@ class HCRFM:
         self.k_ip_pp_uu = self.k_ip_pp_uu[self.iperm_uu]
 
     def plot(self):
+        raise Exception("Not yet implemented, still todo")
         if self.data_uu.m.size != 0:
             n_1d = 100
             min_x = np.min(self.ip_uu[0])
@@ -589,8 +587,6 @@ class HCRFM:
 
             plt.colorbar()
 
-            # todo do the rest
-
     def talk(
         self, performance=None
     ):  # Tell the world about various performance stats, but why is the model talking to us?
@@ -618,5 +614,3 @@ class HCRFM:
         p_div = np.empty((len(p)))
         for i in range(len(p)):
             p_div[i] = p[i] / divisor
-
-    # Constructor
