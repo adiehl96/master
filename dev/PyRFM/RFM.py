@@ -1,6 +1,6 @@
 import numpy as np
 from Enumerations import ObservationModels
-from Refactored.Kernel import kernel_prior_llh, matrix
+from Kernel import kernel_prior_llh, matrix
 from scipy.special import expit
 from Utilities.CalcBinErrorStats import calc_bin_error_stats
 
@@ -172,10 +172,6 @@ def performance(
 
     if predict:
         prediction_uu, uu, k = prediction(test_data, uu, k, kernel_params, params)
-    print("prediction_uu.shape")
-    print(prediction_uu.shape)
-    print("test_data['v'].shape")
-    print(test_data["v"].shape)
     performance_uu = calc_bin_error_stats(prediction_uu, test_data["v"])
     return performance_uu, uu, k
 
@@ -192,3 +188,19 @@ def talk(
         )
     else:
         raise Exception("Only ObservationModels Logit Implemented")
+
+
+def update_kernel_matrices_uu(uu, k, kernel_params):
+    k["k_ip_pp_uu"] = matrix(kernel_params, uu["ip_uu"], uu["pp_uu"])
+    k["k_pp_pp_uu"] = matrix(kernel_params, uu["pp_uu"])
+    k["chol_k_pp_pp_uu"] = cholesky(k["k_pp_pp_uu"])
+    return k
+
+
+def cond_llh_array_params_uu(
+    train_data, uu, k, kernel_params, kernel_priors, params, new_kernel_params
+):
+    kernel_params["lls"], kernel_params["lsv"], kernel_params["ldn"] = new_kernel_params
+    k = update_kernel_matrices_uu(uu, k, kernel_params)
+    llh, uu = array_llh_uu(train_data, uu, k, kernel_params, kernel_priors, params)
+    return llh, uu, k

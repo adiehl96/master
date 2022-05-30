@@ -1,13 +1,12 @@
 import numpy as np
 from scipy.linalg import cholesky
 
-from Refactored.Initialisation import initialise_pp_uu
-from Refactored.Kernel import matrix
-from Refactored.MCMC import slice_u, ss_array_kern_params, ss_pp
-from Refactored.RFM import new_permutation, performance, permute, prediction, talk
-from Refactored.Settings import establish_settings
-from Refactored.DataHandling import load_partitioned_data
-from SliceSampling.GppuElliptical import gppu_elliptical
+from Initialisation import initialise_pp_uu
+from Kernel import matrix
+from MCMC import slice_u, ss_array_kern_params, ss_pp, gppu_elliptical
+from RFM import new_permutation, performance, permute, prediction, talk
+from Settings import establish_settings
+from DataHandling import load_partitioned_data
 from Utilities.CondLlh2Array import cond_llh_2array
 from Utilities.CreateGPInputPoints import create_gp_input_points
 
@@ -115,12 +114,9 @@ def rfm_experiment_refactored(params):
             talk(params, performance_uu)
             print("")
 
-    predictions_average = predictions[params["burn"]]
-    summed_predictions = np.array(predictions).sum(axis=0)
-    avg_predictions = summed_predictions / params["iterations"]
+    avg_predictions = np.array(predictions).sum(axis=0) / params["iterations"]
     avg_performance_uu, _, _ = performance(
         test_data, uu, k, kernel_params, params, False, avg_predictions
     )
     print("\n **** Average performance **** \n")
-    print(talk(params, avg_performance_uu))
-    raise Exception("not yet implemented")
+    talk(params, avg_performance_uu)

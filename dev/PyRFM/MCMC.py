@@ -1,20 +1,17 @@
 import numpy as np
-from Refactored.Kernel import matrix
-from Refactored.RFM import (
-    array_llh_uu,
+from RFM import (
+    cond_llh_array_params_uu,
     cond_llh_pp_uu,
     cond_llh_pp_uu_no_update,
     cond_llh_u,
     update_kernel_matrices_ip_uu,
     update_kernel_matrices_pp_uu,
+    update_kernel_matrices_uu,
 )
-from SliceSampling.SliceSampleMax import slice_sample_max
-from scipy.linalg import cholesky, cho_solve
 
 
 def slice_u(train_data, uu, k, kernel_params, params):
     (m,) = uu["u"].shape
-    print("m", m)
     perm = np.arange(m)
     params["rng"].shuffle(perm)
     for mm in perm:
@@ -82,11 +79,10 @@ def slice_u(train_data, uu, k, kernel_params, params):
 
 def ss_pp(train_data, uu, k, kernel_params, params):
     for _ in range(params["pp_iterations"]):
-        for i in range(len(uu["pp_uu"])):
-            if params["surf_sample"]:
-                uu, k = surf_slice_pp_uu(train_data, uu, k, kernel_params, params)
-            else:
-                raise Exception("Only Surf Slice Sampling implemented")
+        if params["surf_sample"]:
+            uu, k = surf_slice_pp_uu(train_data, uu, k, kernel_params, params)
+        else:
+            raise Exception("Only Surf Slice Sampling implemented")
     return uu, k
 
 
@@ -222,17 +218,83 @@ def ss_array_kern_params(train_data, uu, k, kernel_params, kernel_priors, params
     return kernel_params, k
 
 
-def update_kernel_matrices_uu(uu, k, kernel_params):
-    k["k_ip_pp_uu"] = matrix(kernel_params, uu["ip_uu"], uu["pp_uu"])
-    k["k_pp_pp_uu"] = matrix(kernel_params, uu["pp_uu"])
-    k["chol_k_pp_pp_uu"] = cholesky(k["k_pp_pp_uu"])
-    return k
+def gppu_elliptical(xx, chol_sigma, log_like_fn, rng, angle_range=0):
+    cur_log_like = log_like_fn(xx)
+
+    dimension = len(xx)
+    if chol_sigma.shape != (dimension, dimension):
+        raise Exception("chol_sigma has the wrong dimension")
+
+    nu = (chol_sigma.T @ rng.standard_normal((dimension))).reshape(xx.shape)
+    hh = np.log(rng.uniform()) + cur_log_like
+
+    if angle_range <= 0:
+        phi = rng.uniform() * 2 * np.pi
+        phi_min = phi - 2 * np.pi
+        phi_max = phi
+    else:
+        phi_min = -angle_range * rng.uniform()
+        phi_max = phi_min + angle_range
+        phi = rng.uniform() * (phi_max - phi_min) + phi_min
+
+    while True:
+        xx_prop = xx * np.cos(phi) + nu * np.sin(phi)
+        cur_log_like = log_like_fn(xx_prop)
+        if cur_log_like > hh:
+            return xx_prop
+        if phi > 0:
+            phi_max = phi
+        elif phi < 0:
+            phi_min = phi
+        else:
+            raise Exception(
+                "BUG DETECTED: Shrunk to current position and still not acceptable."
+            )
+        phi = rng.uniform() * (phi_max - phi_min) + phi_min
 
 
-def cond_llh_array_params_uu(
-    train_data, uu, k, kernel_params, kernel_priors, params, new_kernel_params
-):
-    kernel_params["lls"], kernel_params["lsv"], kernel_params["ldn"] = new_kernel_params
-    k = update_kernel_matrices_uu(uu, k, kernel_params)
-    llh, uu = array_llh_uu(train_data, uu, k, kernel_params, kernel_priors, params)
-    return llh, uu, k
+def slice_sample_max(N, burn, logdist, xx, widths, max_attempts, rng, step_out=False):
+    dimension = len(xx)
+    samples = np.zeros((dimension, N))
+    log_px, uu, k = logdist(xx)
+
+    for ii in range(N + burn):
+        log_uprime = np.log(rng.uniform()) + log_px
+
+        perm = np.arange(dimension)
+        rng.shuffle(perm)
+        for dd in perm:
+            x_l = xx
+            x_r = xx
+            xprime = xx
+
+            rr = rng.uniform()
+            x_l[dd] = xx[dd] - rr * widths[dd]
+            x_r[dd] = xx[dd] + (1 - rr) * widths[dd]
+
+            if step_out:
+                raise Exception("step_out not implemented")
+
+            zz = 0
+            num_attempts = 0
+            while True:
+                zz = zz + 1
+                xprime[dd] = rng.uniform() * (x_r[dd] - x_l[dd]) + x_l[dd]
+                log_px, uu, k = logdist(xprime)
+                if log_px > log_uprime:
+                    xx[dd] = xprime[dd]
+                    break
+                else:
+                    num_attempts += 1
+                    if num_attempts >= max_attempts:
+                        break
+                    elif xprime[dd] > xx[dd]:
+                        x_r[dd] = xprime[dd]
+                    elif xprime[dd] < xx[dd]:
+                        x_l[dd] = xprime[dd]
+                    else:
+                        # raise Exception("BUG DETECTED: Shrunk to current position and still not acceptable")
+                        break
+        if ii >= burn:
+            samples[:, ii - burn] = xx
+    return samples, uu, k
