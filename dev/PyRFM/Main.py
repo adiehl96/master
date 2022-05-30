@@ -28,6 +28,15 @@ def rfm_experiment_refactored(params):
     kernel_params["lsv"] = params["init_log_signal_variance"]
     kernel_params["ldn"] = params["init_log_diag_noise"]
 
+    # Create kernel prior list, useful for some functions
+    kernel_priors = np.array(
+        [
+            params["lengthscale_prior"],
+            params["signal_variance_prior"],
+            params["diag_noise_prior"],
+        ]
+    )
+
     # Initialise hidden variables
     uu = {}
     uu["u"] = params["rng"].standard_normal((network_size))
@@ -69,17 +78,10 @@ def rfm_experiment_refactored(params):
                     uu["t_uu"], k["chol_k_pp_pp_uu"], llh_fn, params["rng"]
                 )
         if i % params["lv_modulus"] == 0:
-            uu = slice_u(train_data, uu, k, kernel_params, params)
+            uu, k = slice_u(train_data, uu, k, kernel_params, params)
         if i % params["pp_modulus"] == 0:
             uu, k = ss_pp(train_data, uu, k, kernel_params, params)
         if i % params["kern_par_modulus"] == 0:
-            kernel_priors = np.array(
-                [
-                    params["lengthscale_prior"],
-                    params["signal_variance_prior"],
-                    params["diag_noise_prior"],
-                ]
-            )
             kernel_params, uu, k = ss_array_kern_params(
                 train_data, uu, k, kernel_params, kernel_priors, params
             )

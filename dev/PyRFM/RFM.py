@@ -26,7 +26,7 @@ def cond_llh_u(train_data, uu, k, kernel_params, params, u_index):
         train_data["j"] == u_index
     ).astype(np.int8)
     (active,) = active.nonzero()
-    uu = update_kernel_matrices_ip_uu(train_data, uu, k, kernel_params, u_index)
+    uu, k = update_kernel_matrices_ip_uu(train_data, uu, k, kernel_params, active)
     uu["w_uu"][active] = (
         k["k_ip_pp_uu"][active]
         @ np.linalg.lstsq(k["k_pp_pp_uu"], uu["t_uu"], rcond=-1)[0]
@@ -53,7 +53,7 @@ def update_kernel_matrices_ip_uu(train_data, uu, k, kernel_params, ip_indices):
         uu["ip_uu"][ip_indices],
         uu["pp_uu"],
     )
-    return uu
+    return uu, k
 
 
 def prior_u(uu, params):
@@ -72,7 +72,7 @@ def cond_llh_pp_uu(train_data, uu, k, kernel_params, params, pp_index):
 def update_kernel_matrices_pp_uu(uu, k, kernel_params, pp_index):
     k["k_pp_pp_uu"][:, pp_index] = matrix(
         kernel_params, uu["pp_uu"], uu["pp_uu"][pp_index]
-    ).flatten()
+    ).flatten(order="F")
     k["k_pp_pp_uu"][pp_index] = k["k_pp_pp_uu"][:, pp_index]
 
     k["k_pp_pp_uu"][pp_index, pp_index] = matrix(kernel_params, uu["pp_uu"][pp_index])

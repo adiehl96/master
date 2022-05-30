@@ -16,5 +16,6 @@ params["uu_observation_model"] = ObservationModels.Logit  # ;
 params["n_pp_uu"] = 50  # ; % Number of inducing points
 params["seed"] = 1  # ; % Random seed
 params["kernel_prior_type"] = KernelPriors.LogNormals
+params["pp_iterations"] = 1
 
 rfm_experiment_refactored(params)

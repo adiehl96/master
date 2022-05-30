@@ -71,10 +71,10 @@ def slice_u(train_data, uu, k, kernel_params, params):
                 train_data["j"] == mm
             ).astype(np.int8)
             (ip_indices,) = ip_indices.nonzero()
-            uu = update_kernel_matrices_ip_uu(
+            uu, k = update_kernel_matrices_ip_uu(
                 train_data, uu, k, kernel_params, ip_indices
             )
-    return uu
+    return uu, k
 
 
 def ss_pp(train_data, uu, k, kernel_params, params):
