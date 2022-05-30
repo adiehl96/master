@@ -4,11 +4,14 @@ from scipy.linalg import cholesky
 from Initialisation import initialise_pp_uu
 from Kernel import matrix
 from MCMC import slice_u, ss_array_kern_params, ss_pp, gppu_elliptical
-from RFM import new_permutation, performance, permute, prediction, talk
+from RFM import permute
+from Predicting import prediction, performance
 from Settings import establish_settings
 from DataHandling import load_partitioned_data
 from Utilities.CondLlh2Array import cond_llh_2array
 from Utilities.CreateGPInputPoints import create_gp_input_points
+from Utilities.Permutation import new_permutation
+from OutputHandling import talk
 
 
 def rfm_experiment_refactored(params):
@@ -48,7 +51,7 @@ def rfm_experiment_refactored(params):
     predictions = []
     performances = []
     for i in range(params["burn"] + params["iterations"]):
-        perm, iperm = new_permutation(train_data, params["rng"])
+        perm, iperm = new_permutation(len(train_data["v"]), params["rng"])
         train_data, uu, k = permute(train_data, uu, k, perm)
 
         if i % params["t_modulus"] == 0:
@@ -77,7 +80,7 @@ def rfm_experiment_refactored(params):
                     params["diag_noise_prior"],
                 ]
             )
-            ss_array_kern_params(
+            kernel_params, uu, k = ss_array_kern_params(
                 train_data, uu, k, kernel_params, kernel_priors, params
             )
         if i % params["t_modulus"] == 0:

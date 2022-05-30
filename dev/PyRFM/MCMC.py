@@ -93,7 +93,7 @@ def surf_slice_pp_uu(train_data, uu, k, kernel_params, params):
     params["rng"].shuffle(perm)
 
     for mm in perm:
-        log_pstar, k = cond_llh_pp_uu(train_data, uu, k, kernel_params, params, mm)
+        log_pstar, uu, k = cond_llh_pp_uu(train_data, uu, k, kernel_params, params, mm)
         log_pstar = log_pstar + np.log(params["rng"].uniform())
 
         direction = params["rng"].uniform(size=(d))
@@ -129,7 +129,7 @@ def surf_slice_pp_uu(train_data, uu, k, kernel_params, params):
                     )[0]
                 )
                 uu["t_uu"][mm] = full_conditional_surf + surf_height
-                test_p = cond_llh_pp_uu_no_update(train_data, uu, k, params)
+                test_p, uu = cond_llh_pp_uu_no_update(train_data, uu, k, params)
                 if test_p > log_pstar:
                     pp_l = uu["pp_uu"][mm] - params["pp_slice_width"] * direction
                 else:
@@ -147,7 +147,7 @@ def surf_slice_pp_uu(train_data, uu, k, kernel_params, params):
                     )[0]
                 )
                 uu["t_uu"][mm] = full_conditional_surf + surf_height
-                test_p = cond_llh_pp_uu_no_update(train_data, uu, k, params)
+                test_p, uu = cond_llh_pp_uu_no_update(train_data, uu, k, params)
                 if test_p > log_pstar:
                     pp_r = uu["pp_uu"][mm] + params["pp_slice_width"] * direction
                 else:
@@ -171,7 +171,7 @@ def surf_slice_pp_uu(train_data, uu, k, kernel_params, params):
                 )[0]
             )
             uu["t_uu"][mm] = full_conditional_surf + surf_height
-            log_p_prime = cond_llh_pp_uu_no_update(train_data, uu, k, params)
+            log_p_prime, uu = cond_llh_pp_uu_no_update(train_data, uu, k, params)
             if log_p_prime >= log_pstar:
                 break
             else:
@@ -190,32 +190,7 @@ def surf_slice_pp_uu(train_data, uu, k, kernel_params, params):
             uu["pp_uu"][mm] = pp_saved[mm]
             uu["t_uu"][mm] = t_saved[mm]
             k = update_kernel_matrices_pp_uu(uu, k, kernel_params, mm)
-        return uu, k
-
-
-def ss_array_kern_params(train_data, uu, k, kernel_params, kernel_priors, params):
-    slice_fn = lambda x: cond_llh_array_params_uu(
-        train_data, uu, k, kernel_params, kernel_priors, params, x
-    )
-    x, uu, k = slice_sample_max(
-        1,
-        0,
-        slice_fn,
-        np.array([kernel_params["lls"], kernel_params["lsv"], kernel_params["ldn"]]),
-        np.array(
-            [
-                params["lengthscale_slice_width"],
-                params["signal_variance_slice_width"],
-                params["diag_noise_slice_width"],
-            ]
-        ),
-        params["kern_par_max_attempts"],
-        params["rng"],
-        params["kern_par_step_out"],
-    )
-    kernel_params["lls"], kernel_params["lsv"], kernel_params["ldn"] = x.flatten()
-    k = update_kernel_matrices_uu(uu, k, kernel_params)
-    return kernel_params, k
+    return uu, k
 
 
 def gppu_elliptical(xx, chol_sigma, log_like_fn, rng, angle_range=0):
@@ -225,7 +200,8 @@ def gppu_elliptical(xx, chol_sigma, log_like_fn, rng, angle_range=0):
     if chol_sigma.shape != (dimension, dimension):
         raise Exception("chol_sigma has the wrong dimension")
 
-    nu = (chol_sigma.T @ rng.standard_normal((dimension))).reshape(xx.shape)
+    randnumbers = rng.standard_normal((dimension))
+    nu = (chol_sigma.conj().T @ randnumbers).reshape(xx.shape, order="F").copy()
     hh = np.log(rng.uniform()) + cur_log_like
 
     if angle_range <= 0:
@@ -253,48 +229,66 @@ def gppu_elliptical(xx, chol_sigma, log_like_fn, rng, angle_range=0):
         phi = rng.uniform() * (phi_max - phi_min) + phi_min
 
 
-def slice_sample_max(N, burn, logdist, xx, widths, max_attempts, rng, step_out=False):
+def ss_array_kern_params(train_data, uu, k, kernel_params, kernel_priors, params):
+    slice_fn = lambda x: cond_llh_array_params_uu(
+        train_data, uu, k, kernel_params, kernel_priors, params, x
+    )
+    x, kernel_params, uu, k = slice_sample_max(
+        slice_fn,
+        np.array([kernel_params["lls"], kernel_params["lsv"], kernel_params["ldn"]]),
+        np.array(
+            [
+                params["lengthscale_slice_width"],
+                params["signal_variance_slice_width"],
+                params["diag_noise_slice_width"],
+            ]
+        ),
+        params["kern_par_max_attempts"],
+        params["rng"],
+        params["kern_par_step_out"],
+    )
+    kernel_params["lls"], kernel_params["lsv"], kernel_params["ldn"] = x.flatten()
+    k = update_kernel_matrices_uu(uu, k, kernel_params)
+    return kernel_params, uu, k
+
+
+def slice_sample_max(logdist, xx, widths, max_attempts, rng, step_out=False):
     dimension = len(xx)
-    samples = np.zeros((dimension, N))
-    log_px, uu, k = logdist(xx)
+    log_px, kernel_params, uu, k = logdist(xx)
+    log_uprime = np.log(rng.uniform()) + log_px
 
-    for ii in range(N + burn):
-        log_uprime = np.log(rng.uniform()) + log_px
+    perm = np.arange(dimension)
+    rng.shuffle(perm)
+    for dd in perm:
+        x_l = xx.copy()
+        x_r = xx.copy()
+        xprime = xx.copy()
 
-        perm = np.arange(dimension)
-        rng.shuffle(perm)
-        for dd in perm:
-            x_l = xx
-            x_r = xx
-            xprime = xx
+        rr = rng.uniform()
+        x_l[dd] = xx[dd] - rr * widths[dd]
+        x_r[dd] = xx[dd] + (1 - rr) * widths[dd]
 
-            rr = rng.uniform()
-            x_l[dd] = xx[dd] - rr * widths[dd]
-            x_r[dd] = xx[dd] + (1 - rr) * widths[dd]
+        if step_out:
+            raise Exception("step_out not implemented")
 
-            if step_out:
-                raise Exception("step_out not implemented")
-
-            zz = 0
-            num_attempts = 0
-            while True:
-                zz = zz + 1
-                xprime[dd] = rng.uniform() * (x_r[dd] - x_l[dd]) + x_l[dd]
-                log_px, uu, k = logdist(xprime)
-                if log_px > log_uprime:
-                    xx[dd] = xprime[dd]
+        zz = 0
+        num_attempts = 0
+        while True:
+            zz += 1
+            xprime[dd] = rng.uniform() * (x_r[dd] - x_l[dd]) + x_l[dd]
+            log_px, kernel_params, uu, k = logdist(xprime)
+            if log_px > log_uprime:
+                xx[dd] = xprime[dd]
+                break
+            else:
+                num_attempts += 1
+                if num_attempts >= max_attempts:
                     break
+                elif xprime[dd] > xx[dd]:
+                    x_r[dd] = xprime[dd]
+                elif xprime[dd] < xx[dd]:
+                    x_l[dd] = xprime[dd]
                 else:
-                    num_attempts += 1
-                    if num_attempts >= max_attempts:
-                        break
-                    elif xprime[dd] > xx[dd]:
-                        x_r[dd] = xprime[dd]
-                    elif xprime[dd] < xx[dd]:
-                        x_l[dd] = xprime[dd]
-                    else:
-                        # raise Exception("BUG DETECTED: Shrunk to current position and still not acceptable")
-                        break
-        if ii >= burn:
-            samples[:, ii - burn] = xx
-    return samples, uu, k
+                    # raise Exception("BUG DETECTED: Shrunk to current position and still not acceptable")
+                    break
+    return xx, kernel_params, uu, k

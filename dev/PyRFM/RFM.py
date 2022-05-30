@@ -9,14 +9,6 @@ from Utilities.CreateGPInputPoints import create_gp_input_points
 from scipy.linalg import cholesky, cho_solve
 
 
-def new_permutation(train_data, rng):
-    perm = np.arange(len(train_data["v"]))
-    rng.shuffle(perm)
-    iperm = np.argsort(perm)
-
-    return perm, iperm
-
-
 def permute(train_data, uu, k, perm):
     train_data["i"] = train_data["i"][perm]
     train_data["j"] = train_data["j"][perm]
@@ -73,7 +65,8 @@ def prior_u(uu, params):
 
 def cond_llh_pp_uu(train_data, uu, k, kernel_params, params, pp_index):
     k = update_kernel_matrices_pp_uu(uu, k, kernel_params, pp_index)
-    return cond_llh_pp_uu_no_update(train_data, uu, k, params), k
+    llh, uu = cond_llh_pp_uu_no_update(train_data, uu, k, params)
+    return llh, uu, k
 
 
 def update_kernel_matrices_pp_uu(uu, k, kernel_params, pp_index):
@@ -86,14 +79,14 @@ def update_kernel_matrices_pp_uu(uu, k, kernel_params, pp_index):
     k["chol_k_pp_pp_uu"] = cholesky(k["k_pp_pp_uu"])
     k["k_ip_pp_uu"][:, pp_index] = matrix(
         kernel_params, uu["ip_uu"], uu["pp_uu"][pp_index]
-    ).flatten()
+    ).flatten(order="F")
     return k
 
 
 def cond_llh_pp_uu_no_update(train_data, uu, k, params):
     llh = -np.sum(np.log(np.diag(k["chol_k_pp_pp_uu"]))) - 0.5 * (
         uu["t_uu"] @ cho_solve((k["chol_k_pp_pp_uu"], False), uu["t_uu"])
-    )
+    )  # removed transpose for speed
     uu["w_uu"] = (
         k["k_ip_pp_uu"] @ np.linalg.lstsq(k["k_pp_pp_uu"], uu["t_uu"], rcond=-1)[0]
     )
@@ -101,12 +94,15 @@ def cond_llh_pp_uu_no_update(train_data, uu, k, params):
         uu["w_uu"], train_data["v"], params["uu_observation_model"]
     )
     llh = llh + prior_pp_uu(uu, params)
-    return llh
+    return llh, uu
 
 
 def prior_pp_uu(uu, params):
     flat_pp_uu = uu["pp_uu"].flatten(order="F")
-    return -0.5 * (flat_pp_uu.T @ flat_pp_uu) / np.square(params["pp_uu_sd"])
+    prior = (
+        -0.5 * (flat_pp_uu @ flat_pp_uu) / np.square(params["pp_uu_sd"])
+    )  # no transpose to increase speed
+    return prior
 
 
 def array_llh_uu(train_data, uu, k, kernel_params, kernel_priors, params):
@@ -145,51 +141,6 @@ def state(
     return state
 
 
-def prediction(
-    test_data, uu, k, kernel_params, params
-):  # Returns a cell with predictions
-    uu["pred_ip_uu"] = create_gp_input_points(test_data["i"], test_data["j"], uu["u"])
-    k["k_pred_pp_uu"] = matrix(kernel_params, uu["pred_ip_uu"], uu["pp_uu"])
-    if params["uu_observation_model"] == ObservationModels.Logit:
-        prediction_uu = expit(
-            k["k_pred_pp_uu"]
-            @ np.linalg.lstsq(k["k_pp_pp_uu"], uu["t_uu"], rcond=-1)[0]
-        )
-        return prediction_uu, uu, k
-    else:
-        raise Exception("only logit observation model implemented")
-
-
-def performance(
-    test_data,
-    uu,
-    k,
-    kernel_params,
-    params,
-    predict=True,
-    prediction_uu=None,
-):  # Returns a struct with various error parameters
-
-    if predict:
-        prediction_uu, uu, k = prediction(test_data, uu, k, kernel_params, params)
-    performance_uu = calc_bin_error_stats(prediction_uu, test_data["v"])
-    return performance_uu, uu, k
-
-
-def talk(
-    params, performance
-):  # Tell the world about various performance stats, but why is the model talking to us?
-
-    print("")
-    print(f"UU : ", end="")
-    if params["uu_observation_model"] == ObservationModels.Logit:
-        print(
-            f"AUC = {performance['auc']:.3f} : Error = {performance['classifier_error']:.3f}"
-        )
-    else:
-        raise Exception("Only ObservationModels Logit Implemented")
-
-
 def update_kernel_matrices_uu(uu, k, kernel_params):
     k["k_ip_pp_uu"] = matrix(kernel_params, uu["ip_uu"], uu["pp_uu"])
     k["k_pp_pp_uu"] = matrix(kernel_params, uu["pp_uu"])
@@ -203,4 +154,4 @@ def cond_llh_array_params_uu(
     kernel_params["lls"], kernel_params["lsv"], kernel_params["ldn"] = new_kernel_params
     k = update_kernel_matrices_uu(uu, k, kernel_params)
     llh, uu = array_llh_uu(train_data, uu, k, kernel_params, kernel_priors, params)
-    return llh, uu, k
+    return llh, kernel_params, uu, k
