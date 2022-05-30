@@ -108,9 +108,7 @@ class HCMCMC_SS_RFM:
 
         # Initialise MCMC traces if starting a new run
 
-        self.predictions = np.empty(
-            (self.burn + self.iterations, len(self.rfm.data_uu.test_x_v))
-        )
+        self.predictions = []
         self.performance = []
 
         end_index = self.burn + self.iterations
@@ -124,7 +122,7 @@ class HCMCMC_SS_RFM:
             self.rfm.inverse_permute()
 
             # self.rfm_state[i] = self.rfm.state()
-            self.predictions[i] = self.rfm.prediction()
+            self.predictions.append(self.rfm.prediction())
             self.performance.append(self.rfm.performance(False, np.array([])))
 
             if i % self.plot_modulus == 0 and self.plot_modulus < self.iterations:
@@ -135,13 +133,8 @@ class HCMCMC_SS_RFM:
                 self.rfm.talk()
                 print("")
 
-        self.predictions_average = self.predictions[self.burn]
-        for i in range(self.burn + 1, self.iterations):
-            self.predictions_average = self.rfm.sumpredictions(
-                self.predictions_average, self.predictions[i]
-            )
-        self.predictions_average = self.rfm.divide_predictions(
-            self.predictions_average, self.iterations
+        self.predictions_average = (
+            np.array(self.predictions).sum(axis=0) / self.iterations
         )
 
     def sample_step(self, i):

@@ -29,5 +29,5 @@ def calc_auc(p, o, a, probs=None, links=None):
 
     tpr = 1.0 - fnr
     fpr = 1.0 - tnr
-    auc = -np.trapz(fpr, tpr)
+    auc = -np.trapz(tpr, fpr)
     return auc, tpr, fpr

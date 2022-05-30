@@ -408,11 +408,10 @@ class HCRFM:
 
     def ss_pp(self, iterations, width, step_out, max_attempts, surf=True):
         for _ in range(iterations):
-            for i in range(len(self.pp_uu)):
-                if surf:
-                    self.surf_slice_pp_uu(width, step_out, max_attempts)
-                else:
-                    self.slice_pp_uu(width, step_out, max_attempts)
+            if surf:
+                self.surf_slice_pp_uu(width, step_out, max_attempts)
+            else:
+                self.slice_pp_uu(width, step_out, max_attempts)
 
     def ss_u(self, width, step_out, max_attempts):
         self.slice_u(width, step_out, max_attempts)
