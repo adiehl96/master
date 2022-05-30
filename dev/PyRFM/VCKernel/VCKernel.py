@@ -37,9 +37,7 @@ class VCKernel:
                     self.jitter * np.max(matrix) + np.exp(2 * self.diag_noise)
                 ) * np.eye(len(matrix))
             elif isinstance(matrix, np.float64):
-                matrix = matrix + (
-                    self.jitter * np.max(matrix) + np.exp(2 * self.diag_noise)
-                )
+                matrix = matrix + (self.jitter * matrix + np.exp(2 * self.diag_noise))
             else:
                 raise Exception("Unknown kernel output type")
             return matrix

@@ -30,8 +30,6 @@ class HCRFM:
 
         self.observation_model_uu = ObservationModels.Logit
 
-        self.data_precision_uu = 1
-
         self.array_kern_uu = (
             VCKernel()
         )  # Kernel for 2-array (same for each array dimension)
@@ -88,12 +86,10 @@ class HCRFM:
         self.w_uu = (
             self.k_ip_pp_uu @ np.linalg.lstsq(self.k_pp_pp_uu, self.t_uu, rcond=-1)[0]
         )
-        params = {"precision": self.data_precision_uu}
         llh = llh + cond_llh_2array(
             self.w_uu,
             self.data_uu.train_x_v,
             self.observation_model_uu,
-            params,
         )
         llh = llh + self.prior_pp_uu()
 
@@ -114,9 +110,8 @@ class HCRFM:
         self.w_uu = (
             self.k_ip_pp_uu @ np.linalg.lstsq(self.k_pp_pp_uu, self.t_uu, rcond=-1)[0]
         )
-        params = {"precision": self.data_precision_uu}
         llh = llh + cond_llh_2array(
-            self.w_uu, self.data_uu.train_x_v, self.observation_model_uu, params
+            self.w_uu, self.data_uu.train_x_v, self.observation_model_uu
         )
         llh = llh + self.prior_pp_uu()
         return llh
@@ -136,12 +131,10 @@ class HCRFM:
             self.k_ip_pp_uu[active]
             @ np.linalg.lstsq(self.k_pp_pp_uu, self.t_uu, rcond=-1)[0]
         )
-        params = {"precision": self.data_precision_uu}
         llh = llh + cond_llh_2array(
             self.w_uu[active],
             self.data_uu.train_x_v[active],
             self.observation_model_uu,
-            params,
         )
 
         if self.data_uu.train_x_v.size != 0:
@@ -193,6 +186,7 @@ class HCRFM:
         self.k_pred_pp_uu = self.array_kern_uu.matrix(self.pred_ip_uu, self.pp_uu)
 
     def initialise_pca(self):
+        raise Exception("Not implemented")
         self.init_u_rand()
         self.init_pp_t()
         self.init_cache()
@@ -207,12 +201,10 @@ class HCRFM:
             self.k_pp_pp_uu, self.k_ip_pp_uu.T, rcond=-1
         )[0].T
         for _ in range(iterations):
-            params = {"precision": self.data_precision_uu}
             llh_fn = lambda T: cond_llh_2array(
                 k_pp_pp_invk_ppip_t @ T,
                 self.data_uu.train_x_v,
                 self.observation_model_uu,
-                params,
             )
             self.t_uu = gppu_elliptical(
                 self.t_uu, self.chol_k_pp_pp_uu, llh_fn, self.rng
@@ -423,7 +415,6 @@ class HCRFM:
         state["pp_uu"] = self.pp_uu
         state["t_uu"] = self.t_uu
         state["array_kern_uu"] = self.array_kern_uu
-        state["data_precision_uu"] = self.data_precision_uu
         state["llh"] = self.llh()
         return state
 
@@ -497,7 +488,6 @@ class HCRFM:
             self.w_uu,
             self.data_uu.train_x_v,
             self.observation_model_uu,
-            {"precision": self.data_precision_uu},
         )
 
     def update_kernel_matrices_uu(self):

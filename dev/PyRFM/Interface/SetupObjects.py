@@ -13,23 +13,15 @@ def setup_objects(params=None):
     uu_filename = params.get("uu_filename", "2Clique20.csv")
     uu_folds = params.get("uu_folds", 5)
     uu_fold = params.get("uu_fold", 1)
-
-    uu_kernel_name = params.get("uu_kernel_name", "covSEard_sym")
     uu_diag_noise = params.get("uu_diag_noise", np.log(0.1))
-    if uu_kernel_name == "covSEiso_sym" or uu_kernel_name == "covSEiso":
-        dims = 1
-    elif uu_kernel_name == "covSEard_sym":
-        dims = u_dim
-    else:
-        dims = 2 * u_dim
 
     uu_kernel_params = params.get(
-        "uu_kernel_params", np.array([np.log(1)] * dims + [np.log(2)])
+        "uu_kernel_params", np.array([np.log(1)] * u_dim + [np.log(2)])
     )
     uu_prior = params.get("uu_prior", KernelPriors.InverseGammas)
 
     if uu_prior == KernelPriors.LogNormals:
-        param_defaults = np.empty((dims + 1, 2))
+        param_defaults = np.empty((u_dim + 1, 2))
         param_defaults[:, 0] = uu_kernel_params
         param_defaults[:, 1] = 0.5
         uu_noise_params = np.array([np.log(0.1), 0.5])
@@ -42,7 +34,6 @@ def setup_objects(params=None):
     uu_kern_prior_params = params.get("uu_kern_prior_params", param_defaults)
 
     uu_observation_model = params.get("uu_observation_model", ObservationModels.Logit)
-    uu_data_precision = params.get("uu_data_precision", 1)
     n_pp_uu = params.get("n_pp_uu", 50)
 
     # MCMC
@@ -85,7 +76,6 @@ def setup_objects(params=None):
     rfm.data_uu = data
 
     rfm.observation_model_uu = uu_observation_model
-    rfm.dataprecision_uu = uu_data_precision
 
     # Setup UU kernel
 
@@ -93,7 +83,7 @@ def setup_objects(params=None):
     rfm.array_kern_uu.params = uu_kernel_params
     rfm.array_kern_uu.prior_params = uu_kern_prior_params
     rfm.array_kern_uu.noise_params = uu_noise_params
-    rfm.array_kern_uu.priorType = uu_prior
+    rfm.array_kern_uu.prior_type = uu_prior
 
     rfm.n_pp_uu = n_pp_uu
 

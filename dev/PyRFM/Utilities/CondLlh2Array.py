@@ -3,7 +3,7 @@ from scipy.special import expit
 from Utilities.BernoulliLlh import bernoulli_llh
 
 
-def cond_llh_2array(W, X, ObsModel, params):
+def cond_llh_2array(W, X, ObsModel):
     if ObsModel == ObservationModels.Logit:
         p = expit(W)
         return bernoulli_llh(p, X)

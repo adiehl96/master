@@ -4,7 +4,7 @@ import numpy as np
 def slice_sample_max(N, burn, logdist, xx, widths, max_attempts, rng, step_out=False):
     dimension = len(xx)
     samples = np.zeros((dimension, N))
-    log_px = logdist(xx)
+    log_px, uu, k = logdist(xx)
 
     for ii in range(N + burn):
         log_uprime = np.log(rng.uniform()) + log_px
@@ -28,7 +28,7 @@ def slice_sample_max(N, burn, logdist, xx, widths, max_attempts, rng, step_out=F
             while True:
                 zz = zz + 1
                 xprime[dd] = rng.uniform() * (x_r[dd] - x_l[dd]) + x_l[dd]
-                log_px = logdist(xprime)
+                log_px, uu, k = logdist(xprime)
                 if log_px > log_uprime:
                     xx[dd] = xprime[dd]
                     break
@@ -45,4 +45,4 @@ def slice_sample_max(N, burn, logdist, xx, widths, max_attempts, rng, step_out=F
                         break
         if ii >= burn:
             samples[:, ii - burn] = xx
-    return samples
+    return samples, uu, k
