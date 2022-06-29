@@ -1,8 +1,8 @@
-from Utilities.CalcAUC import calc_auc
-from Utilities.CalcKLScore import calc_kl_score
-from Utilities.CalcClassScore import calc_class_score
-from Utilities.CalcClassifierScore import calc_classifier_score
-from Utilities.CalcRMSE import calc_rmse
+from utils.CalcAUC import calc_auc
+from utils.CalcKLScore import calc_kl_score
+from utils.CalcClassScore import calc_class_score
+from utils.CalcClassifierScore import calc_classifier_score
+from utils.CalcRMSE import calc_rmse
 
 
 def calc_bin_error_stats(probs, links):
