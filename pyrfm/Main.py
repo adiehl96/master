@@ -7,14 +7,15 @@ from MCMC import slice_u, ss_array_kern_params, ss_pp, gppu_elliptical
 from RFM import permute
 from Predicting import prediction, performance
 from Settings import establish_settings
-from DataHandling import load_partitioned_data
-from Utilities.CondLlh2Array import cond_llh_2array
-from Utilities.CreateGPInputPoints import create_gp_input_points
-from Utilities.Permutation import new_permutation
+from DataHandling import load_partitioned_data, check_for_datasets
+from utils.CondLlh2Array import cond_llh_2array
+from utils.CreateGPInputPoints import create_gp_input_points
+from utils.Permutation import new_permutation
 from OutputHandling import talk
 
 
 def rfm_experiment_refactored(params):
+    check_for_datasets(params["uu_filename"])
     params = {} if params is None else params
     params = establish_settings(params)
 
