@@ -14,6 +14,13 @@ conda env create --file environment.yml
 ```
 Further information on running a certain piece of software in this repository can be found in the subdirectories.
 
+## Reference Material
+There is a number of introductory material available to understand the topics that coalesce in this research.
+
+|Topic|Link|Notes|
+|---|---|---|
+|Graphon Definition|[link](https://nkeriven.github.io/files/tuto_graphon.pdf))|Slides for an introductory talk about the graphon, contains many definitions|
+
 ## Licence
 Copyright (C) 2013, [Morten Mørup](http://www.mortenmorup.dk/)<br>
 Copyright (C) 2012, 2013, [James Robert Lloyd](https://github.com/jamesrobertlloyd)<br>
