@@ -20,6 +20,7 @@ There is a number of introductory material available to understand the topics th
 |Topic|Link|Notes|
 |---|---|---|
 |Graphon Definition|[link](https://nkeriven.github.io/files/tuto_graphon.pdf)|Slides for an introductory talk about the graphon, contains many definitions|
+|Graphon Definition|[link](https://christofseiler.github.io/stats205/Lecture23/GraphLimits.pdf)| Slides for an introductory talk about the graphon, very easy to follow.
 
 ## Licence
 Copyright (C) 2013, [Morten Mørup](http://www.mortenmorup.dk/)<br>
