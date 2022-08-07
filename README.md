@@ -21,6 +21,7 @@ There is a number of introductory material available to understand the topics th
 |---|---|---|
 |Graphon Definition|[link](https://nkeriven.github.io/files/tuto_graphon.pdf)|Slides for an introductory talk about the graphon, contains many definitions|
 |Graphon Definition|[link](https://christofseiler.github.io/stats205/Lecture23/GraphLimits.pdf)| Slides for an introductory talk about the graphon, very easy to follow.
+|Graphon Introduction|[link](https://people.math.osu.edu/memolitechera.1/courses/cse-topics-2016/slides/corey-graphons-slides.pdf)| Very introductory, but easy to follow|
 
 ## Licence
 Copyright (C) 2013, [Morten Mørup](http://www.mortenmorup.dk/)<br>
