@@ -23,6 +23,7 @@ There is a number of introductory material available to understand the topics th
 |Graphon Definition|[link](https://christofseiler.github.io/stats205/Lecture23/GraphLimits.pdf)| Slides for an introductory talk about the graphon, very easy to follow.
 |Graphon Introduction|[link](https://people.math.osu.edu/memolitechera.1/courses/cse-topics-2016/slides/corey-graphons-slides.pdf)| Very introductory, but easy to follow|
 |Generative Networks Modelling in Connectomics|[link](https://www.humanbrainmapping.org/files/2016/ED/ohbm_genmodels_talk.pdf)| Overview, but missing the graphon|
+|Graph theory and connectomics an introduction|[link](https://www.humanbrainmapping.org/files/2016/ED/Fornito_OHBM-June_2016.pdf)| Overview, but missing the graphon|
 
 
 ## Licence
