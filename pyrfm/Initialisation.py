@@ -1,5 +1,5 @@
 import numpy as np
-from Utilities.CreateGPInputPoints import create_gp_input_points
+from utils.CreateGPInputPoints import create_gp_input_points
 
 
 def initialise_pp_uu(train_x_i, train_x_j, u, n_pp_uu, rng):
