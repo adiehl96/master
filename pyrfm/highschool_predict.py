@@ -5,7 +5,7 @@ from Main import rfm_experiment_refactored
 params = {}
 
 params["save_filename"] = "temp.mat"
-params["uu_filename"] = "HighSchool.csv"
+params["uu_filename"] = "HighSchool"
 params["u_dim"] = 1  # Number of latent dimensions
 params["uu_folds"] = 5  # ; % Number of folds for cross validation
 params["uu_fold"] = 1  # ; % Fold to use

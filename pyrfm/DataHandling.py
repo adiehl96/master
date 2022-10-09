@@ -1,6 +1,12 @@
-import csv
+import csv, os, requests
 import numpy as np
 
+def check_for_datasets(filename):
+    if not os.path.isfile(f"./datasets/{filename}.csv"):
+        url = f"https://raw.githubusercontent.com/adiehl96/Network-Science-Datasets/main/{filename}/{filename}.csv"
+        r = requests.get(url, allow_redirects=True)
+        os.makedirs("./datasets", exist_ok=True)
+        open(f"./datasets/{filename}.csv", "wb").write(r.content)
 
 def load_partitioned_data(filename, folds, fold, rng):
     array, network_size = load_from_file(filename)
@@ -21,7 +27,7 @@ def load_partitioned_data(filename, folds, fold, rng):
 
 
 def load_from_file(filename):
-    with open(f"./datasets/{filename}", newline="") as csvfile:
+    with open(f"./datasets/{filename}.csv", newline="") as csvfile:
         reader = csv.reader(csvfile, delimiter=",")
         read = np.array([item for row in reader for item in row]).astype(np.int8)
         read = read.reshape((int(np.sqrt(len(read))), int(np.sqrt(len(read)))))

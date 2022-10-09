@@ -1,11 +1,8 @@
 import numpy as np
-from Enumerations import ObservationModels
 from Kernel import kernel_prior_llh, matrix
-from scipy.special import expit
-from Utilities.CalcBinErrorStats import calc_bin_error_stats
 
-from Utilities.CondLlh2Array import cond_llh_2array
-from Utilities.CreateGPInputPoints import create_gp_input_points
+from utils.cond_llh_2array import cond_llh_2array
+from utils.create_gp_input_points import create_gp_input_points
 from scipy.linalg import cholesky, cho_solve
 
 

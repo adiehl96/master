@@ -1,7 +1,7 @@
-from Utilities.CreateGPInputPoints import create_gp_input_points
-from Kernel import kernel_prior_llh, matrix
+from utils.create_gp_input_points import create_gp_input_points
+from Kernel import matrix
 from Enumerations import ObservationModels
-from Utilities.CalcBinErrorStats import calc_bin_error_stats
+from utils.calc_bin_error_stats import calc_bin_error_stats
 
 from scipy.special import expit
 

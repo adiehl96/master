@@ -1,3 +1,4 @@
+import os 
 import numpy as np
 from scipy.linalg import cholesky
 
@@ -7,16 +8,18 @@ from MCMC import slice_u, ss_array_kern_params, ss_pp, gppu_elliptical
 from RFM import permute
 from Predicting import prediction, performance
 from Settings import establish_settings
-from DataHandling import load_partitioned_data
-from Utilities.CondLlh2Array import cond_llh_2array
-from Utilities.CreateGPInputPoints import create_gp_input_points
-from Utilities.Permutation import new_permutation
+from DataHandling import load_partitioned_data, check_for_datasets
+from utils.cond_llh_2array import cond_llh_2array
+from utils.create_gp_input_points import create_gp_input_points
+from utils.permutation import new_permutation
 from OutputHandling import talk
 
 
 def rfm_experiment_refactored(params):
     params = {} if params is None else params
     params = establish_settings(params)
+
+    check_for_datasets(params["uu_filename"])
 
     train_data, test_data, network_size = load_partitioned_data(
         params["uu_filename"], params["uu_folds"], params["uu_fold"], params["rng"]
@@ -125,3 +128,15 @@ def rfm_experiment_refactored(params):
     )
     print("\n **** Average performance **** \n")
     talk(params, avg_performance_uu)
+
+    os.makedirs("./output", exist_ok=True)
+    
+
+    np.savez_compressed(
+        "output/performances.npz",
+        auc=np.array([x["auc"] for x in performances]),
+        kls=[x["kls"] for x in performances],
+        cls=[x["cls"] for x in performances],
+        classifier_error=[x["classifier_error"] for x in performances],
+        rmse=[x["rmse"] for x in performances],
+    )

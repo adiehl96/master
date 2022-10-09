@@ -14,6 +14,8 @@ def slice_u(train_data, uu, k, kernel_params, params):
     (m,) = uu["u"].shape
     perm = np.arange(m)
     params["rng"].shuffle(perm)
+    u_saved = uu["u"].copy()
+    
     for mm in perm:
         log_pstar, uu = cond_llh_u(train_data, uu, k, kernel_params, params, mm)
         log_pstar = log_pstar + np.log(params["rng"].uniform())
@@ -24,7 +26,7 @@ def slice_u(train_data, uu, k, kernel_params, params):
         rr = params["rng"].uniform()
         u_l = uu["u"][mm] - rr * params["u_slice_width"] * direction
         u_r = uu["u"][mm] + (1 - rr) * params["u_slice_width"] * direction
-        u_saved = uu["u"].copy()
+        
 
         attempts = 0
 
