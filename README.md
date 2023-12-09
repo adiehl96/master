@@ -3,9 +3,10 @@ This repository contains everything that was needed to write my master thesis. O
 
 ## Structure
 The repository is divided into different directories that are self contained. As of right now, the following subdirectories exist:
-* **thesis**: Thesis pdf and latex files.
 * **dev**: This directory contains legacy implementations and minimum working examples of certain aspects of the RFM model described in the paper by Lloyd et al.
+* **legacylloyd** A partial attempt at an object oriented rewrite of the RFM model, discontinued due to missing time.
 * **pyrfm**: A python implementation of the Lloyd et al. RFM model, written in an imperative programming style (as opposed to the object oriented style of the [original](https://github.com/adiehl96/BasicRFM)).
+* **thesis**: Thesis pdf and latex files.
 
 ## Usage
 
